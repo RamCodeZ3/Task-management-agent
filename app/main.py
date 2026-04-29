@@ -1,20 +1,15 @@
-from services.google_services.google_task_list import GoogleTaskList
-from services.google_services.google_task import GoogleTask
-from models.task import TaskModel
-import asyncio
+from fastapi import FastAPI
+import uvicorn
+from webhook.router import router
+
+
+app = FastAPI()
+app.include_router(router)
+
 
 if __name__ == "__main__":
-    gtl = GoogleTaskList()
-    gt = GoogleTask()
-    
-    # task_list = asyncio.run(gtl.get_all_task_lists())
-
-    task = TaskModel(
-        title="Trabajo de fundamento de programacion",
-        notes="Crea un programa que utilice programacion orientada a objeto",
-        deadline="2026-05-10T10:30:00-04:00"
+    uvicorn.run(
+        app,
+        host="127.0.0.1",
+        port=8000
     )
-
-    asyncio.run(gt.create_task(task, "WnhCQktLejRSNUV2N0pRTQ"))
-
-    print(task)
