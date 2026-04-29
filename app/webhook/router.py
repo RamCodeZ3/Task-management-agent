@@ -19,27 +19,39 @@ async def verification(
     hub_challenge: str = Query(None, alias="hub.challenge"),
     hub_verify_token: str = Query(None, alias="hub.verify_token")
 ):
-    if hub_mode == "subscribe" and hub_verify_token == webhook_token:
-        print("✅ verificado correctamente")
-        return int(hub_challenge)
+    try:
+        if hub_mode == "subscribe" and hub_verify_token == webhook_token:
+            print("✅ Verified correctly")
+            return int(hub_challenge)
+        
+        if not hub_mode or not hub_verify_token or not hub_challenge:
+            raise HTTPException(
+                status_code=400,
+                detail="parameters are missing"
+            )
+        
+    except HTTPException:
+        raise HTTPException(status_code=403, detail="Forbidden")
     
-    if not hub_mode or not hub_verify_token or not hub_challenge:
-        raise HTTPException(status_code=400, detail="parameters are missing")
-    
-    raise HTTPException(status_code=403, detail="Forbidden")
+    except Exception as e:
+        raise ValueError("There was a mistake with verification:", e)
 
 
 @router.post("/")
 async def message_entry(request: Request):
-    data = await request.json()
+    try:
+         data = await request.json()
 
-    if data:
-        for entry in data.get("entry", []):
-            for change in entry.get("changes", []):
-                value = change.get("value", {})
-                phone_number_id = value.get("metadata", {}).get("phone_number_id")
-                message_data = value.get("messages", [])
-                for message in message_data:
-                    print(parser_message(message))
+         if data:
+            for entry in data.get("entry", []):
+                for change in entry.get("changes", []):
+                    value = change.get("value", {})
+                    phone_number_id = value.get("metadata", {}).get("phone_number_id")
+                    message_data = value.get("messages", [])
+                    for message in message_data:
+                        print(parser_message(message))
 
-    return {"status": "EVENT_RECEIVED"}
+         return {"status": "EVENT_RECEIVED"}
+    
+    except Exception as e:
+        raise ValueError("There was a mistake with message entry:", e)   
