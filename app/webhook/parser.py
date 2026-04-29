@@ -22,7 +22,7 @@ def get_audio_url(media_id: str) -> str:
         return r.json()["url"]
     
     except Exception as e:
-        raise ValueError("There was a mitsake getting the url", e)
+        raise ValueError("There was a error getting the url", e)
 
 
 def transcribe_audio(media_id: str) -> str:
@@ -76,4 +76,4 @@ def parser_message(message: dict):
             return None
 
     except Exception as e:
-        raise ValueError(f"There was a mistake getting the data: {e}")
+        raise ValueError(f"There was a error getting the data: {e}")

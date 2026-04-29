@@ -34,7 +34,7 @@ async def verification(
         raise HTTPException(status_code=403, detail="Forbidden")
     
     except Exception as e:
-        raise ValueError("There was a mistake with verification:", e)
+        raise ValueError("There was a error with verification:", e)
 
 
 @router.post("/")
@@ -54,4 +54,4 @@ async def message_entry(request: Request):
          return {"status": "EVENT_RECEIVED"}
     
     except Exception as e:
-        raise ValueError("There was a mistake with message entry:", e)   
+        raise ValueError("There was a error with message entry:", e)   
