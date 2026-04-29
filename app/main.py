@@ -1,6 +1,15 @@
-def main():
-    print("Hello from task-management-agent!")
+from fastapi import FastAPI
+import uvicorn
+from webhook.router import router
+
+
+app = FastAPI()
+app.include_router(router)
 
 
 if __name__ == "__main__":
-    main()
+    uvicorn.run(
+        app,
+        host="127.0.0.1",
+        port=8000
+    )
