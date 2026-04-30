@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query, Request
-from services.llm_services.llm_service import llm_service
+from broker import process_task
 
 from .parser import parser_message
 
@@ -44,20 +44,12 @@ async def message_entry(request: Request):
                     value = change.get("value", {})
                     phone_number_id = value.get("metadata", {}).get("phone_number_id")
                     message_data = value.get("messages", [])
+                    
                     for message in message_data:
-                        print(parser_message(message))
+                        extrated_message = parser_message(message)
+                        await process_task(extrated_message)
 
         return {"status": "EVENT_RECEIVED"}
 
     except Exception as e:
         raise ValueError("There was a error with message entry:", e)
-
-
-@router.post("/LLM/generation")
-async def generation(text: str):
-    try:
-        result = await llm_service.process(text)
-        return result
-
-    except Exception as e:
-        raise Exception("There was a error with LLM process", e)

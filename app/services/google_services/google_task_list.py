@@ -15,7 +15,7 @@ class GoogleTaskList:
         try:
             body = {"title": title}
             task_list = self.service.tasklists().insert(body=body).execute()
-            return task_list
+            return task_list["id"]
         
         except HttpError as e:
             raise ValueError("There was an http error: ", e)
@@ -34,16 +34,18 @@ class GoogleTaskList:
         except Exception as e:
             raise ValueError("There was an error getting the task lists: ", e)
     
-    async def get_task_list_by_id(self, task_list_id: str):
+    async def get_task_list_by_title(self, task_list_title: str):
         try:
-            task_list = self.service.tasklists.get(
-                tasklist=task_list_id
-            ).execute()
+            task_list = self.service.tasklists().list().execute()
 
-            return task_list
-        
+            for tl in task_list["items"]:
+                if tl["title"] == task_list_title:
+                    return tl["id"]
+            
+            return None
+
         except HttpError as e:
-            raise ValueError("There was an http error: ", e)
+            raise ValueError(f"There was an http error: {e}")
 
         except Exception as e:
-            raise ValueError("There was an error getting the task list:", e)
+            raise ValueError(f"There was an error getting the task list: {e}")
