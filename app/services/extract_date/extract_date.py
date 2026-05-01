@@ -1,7 +1,6 @@
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
-
 from dateparser import parse as dateparser_parse
 
 
@@ -9,8 +8,8 @@ class DateExtractorService:
     @classmethod
     def extract_date(
         cls, text: str, default_to_next_day: bool = True
-    ) -> Optional[datetime]:
-        """Extract date supporting multiple languages automatically"""
+    ) -> Optional[str]:
+        """Extract date supporting multiple languages and return RFC 3339 string"""
         try:
             potential_dates = cls._extract_date_substrings(text)
             for candidate in potential_dates:
@@ -23,13 +22,21 @@ class DateExtractorService:
                     },
                 )
                 if parsed:
-                    return parsed.replace(hour=0, minute=0, second=0, microsecond=0)
+                    return parsed.astimezone(timezone.utc).replace(
+                        microsecond=0
+                    ).isoformat().replace("+00:00", "Z")
+        
         except Exception as e:
             print("Error parsing date:", e)
 
         if default_to_next_day:
-            tomorrow = datetime.now() + timedelta(days=1)
-            return tomorrow.replace(hour=0, minute=0, second=0, microsecond=0)
+            tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
+            return tomorrow.replace(
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0
+            ).isoformat().replace("+00:00", "Z")
 
         return None
 
@@ -63,4 +70,4 @@ class DateExtractorService:
         return list(dict.fromkeys(candidates))
 
 
-extract_date = DateExtractorService()
+date_extractor = DateExtractorService()

@@ -83,3 +83,5 @@ class GoogleTask:
         
         except Exception as e:
             raise ValueError("There was an error deleting the task: ", e)
+
+google_task = GoogleTask()

@@ -1,6 +1,7 @@
 from services.llm_services.classification_llm import classify
 from services.llm_services.generation_llm import generate_description, generate_title
 
+
 INTENT_LABELS_DESCRIPTIVE = [
     "create a new task",
     "update an existing task",
