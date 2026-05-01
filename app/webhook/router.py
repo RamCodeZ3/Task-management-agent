@@ -3,6 +3,7 @@ import os
 from bus.bus import process_task
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query, Request
+from bus.bus import process_task
 
 from .parser import parser_message
 
