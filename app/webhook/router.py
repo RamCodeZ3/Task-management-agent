@@ -1,9 +1,8 @@
 import os
 
-from broker import process_task
+from bus.bus import process_task
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query, Request
-from services.llm_services.llm_service import llm_service
 
 from .parser import parser_message
 

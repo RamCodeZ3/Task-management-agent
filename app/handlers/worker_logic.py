@@ -1,9 +1,8 @@
 from models.task import TaskModel
-
-from .extract_date.extract_date import DateExtractorService
-from .google_services.google_task import GoogleTask
-from .google_services.google_task_list import GoogleTaskList
-from .llm_services.llm_service import LLMService
+from services.extract_date.extract_date import DateExtractorService
+from services.google_services.google_task import GoogleTask
+from services.google_services.google_task_list import GoogleTaskList
+from services.llm_services.llm_service import LLMService
 
 
 async def process_task(message: str):
@@ -27,7 +26,7 @@ async def process_task(message: str):
     task = TaskModel(
         title=task_info["title"],
         notes=task_info["description"],
-        deadline=deadline,
+        deadline=str(deadline),
     )
 
     await gt.create_task(task, task_list_id)
