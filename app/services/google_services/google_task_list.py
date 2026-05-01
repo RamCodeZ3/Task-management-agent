@@ -49,3 +49,6 @@ class GoogleTaskList:
 
         except Exception as e:
             raise ValueError(f"There was an error getting the task list: {e}")
+
+
+google_task_list = GoogleTaskList()

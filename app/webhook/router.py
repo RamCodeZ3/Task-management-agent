@@ -1,5 +1,6 @@
 import os
 
+from bus.bus import process_task
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query, Request
 from bus.bus import process_task, connection
@@ -35,6 +36,15 @@ async def verification(
     except Exception as e:
         raise ValueError("There was a error with verification:", e)
 
+@router.post("/")
+async def message_entry(request: Request):
+    return await _handle_message(request)
+
+
+@router.post("")
+async def message_entry_no_slash(request: Request):
+    return await _handle_message(request)
+
 
 async def _handle_message(request: Request):
     try:
@@ -67,12 +77,3 @@ async def _handle_message(request: Request):
     except Exception as e:
         raise ValueError("There was an error:", e)
 
-
-@router.post("/")
-async def message_entry(request: Request):
-    return await _handle_message(request)
-
-
-@router.post("")
-async def message_entry_no_slash(request: Request):
-    return await _handle_message(request)
