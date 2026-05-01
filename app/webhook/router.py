@@ -1,5 +1,6 @@
 import os
 
+from bus.bus import process_task
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query, Request
 from bus.bus import process_task
@@ -44,7 +45,7 @@ async def message_entry(request: Request):
                     value = change.get("value", {})
                     phone_number_id = value.get("metadata", {}).get("phone_number_id")
                     message_data = value.get("messages", [])
-                    
+
                     for message in message_data:
                         extrated_message = parser_message(message)
                         await process_task(extrated_message)
