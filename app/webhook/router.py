@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query, Request
-from broker import process_task
+from bus.bus import process_task
 
 from .parser import parser_message
 
