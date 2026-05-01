@@ -1,8 +1,9 @@
 import os
 
+from broker import process_task
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query, Request
-from broker import process_task
+from services.llm_services.llm_service import llm_service
 
 from .parser import parser_message
 
@@ -44,7 +45,7 @@ async def message_entry(request: Request):
                     value = change.get("value", {})
                     phone_number_id = value.get("metadata", {}).get("phone_number_id")
                     message_data = value.get("messages", [])
-                    
+
                     for message in message_data:
                         extrated_message = parser_message(message)
                         await process_task(extrated_message)
