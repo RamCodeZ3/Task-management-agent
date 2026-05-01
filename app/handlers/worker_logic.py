@@ -1,6 +1,6 @@
-from .google_services.google_task_list import GoogleTaskList
-from .google_services.google_task import GoogleTask
-from .llm_services.llm_service import LLMService
+from services.google_services.google_task_list import GoogleTaskList
+from services.google_services.google_task import GoogleTask
+from services.llm_services.llm_service import LLMService
 from models.task import TaskModel
 
 
