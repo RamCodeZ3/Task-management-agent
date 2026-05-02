@@ -53,6 +53,9 @@ async def _handle_message(request: Request):
             for entry in data.get("entry", []):
                 for change in entry.get("changes", []):
                     value = change.get("value", {})
+                    phone_number = value.get(
+                        "metadata", {}
+                    ).get("display_phone_number")
                     message_data = value.get("messages", [])
 
                     for message in message_data:
@@ -71,7 +74,7 @@ async def _handle_message(request: Request):
                         )
 
                         extracted_message = parser_message(message)
-                        await process_task(extracted_message)
+                        await process_task(extracted_message, phone_number)
 
         return {"status": "EVENT_RECEIVED"}
     except Exception as e:
