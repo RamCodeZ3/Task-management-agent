@@ -1,11 +1,10 @@
 import os
 
-from bus.bus import process_task
+from bus.bus import connection, process_task
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Query, Request
-from bus.bus import process_task, connection
-from .parser import parser_message
 
+from .parser import parser_message
 
 load_dotenv()
 webhook_token = os.getenv("WEBHOOK_TOKEN")
@@ -25,16 +24,14 @@ async def verification(
             return int(hub_challenge)
 
         if not hub_mode or not hub_verify_token or not hub_challenge:
-            raise HTTPException(
-                status_code=400,
-                detail="parameters are missing"
-            )
+            raise HTTPException(status_code=400, detail="parameters are missing")
 
     except HTTPException:
         raise HTTPException(status_code=403, detail="Forbidden")
 
     except Exception as e:
         raise ValueError("There was a error with verification:", e)
+
 
 @router.post("/")
 async def message_entry(request: Request):
@@ -53,9 +50,7 @@ async def _handle_message(request: Request):
             for entry in data.get("entry", []):
                 for change in entry.get("changes", []):
                     value = change.get("value", {})
-                    phone_number = value.get(
-                        "metadata", {}
-                    ).get("display_phone_number")
+                    phone_number = value.get("metadata", {}).get("display_phone_number")
                     message_data = value.get("messages", [])
 
                     for message in message_data:
@@ -67,11 +62,7 @@ async def _handle_message(request: Request):
                         if connection.exists(f"msg:{message_id}"):
                             continue
 
-                        connection.setex(
-                            f"msg:{message_id}",
-                            86400,
-                            "processed"
-                        )
+                        connection.setex(f"msg:{message_id}", 86400, "processed")
 
                         extracted_message = parser_message(message)
                         await process_task(extracted_message, phone_number)
@@ -79,4 +70,3 @@ async def _handle_message(request: Request):
         return {"status": "EVENT_RECEIVED"}
     except Exception as e:
         raise ValueError("There was an error:", e)
-
