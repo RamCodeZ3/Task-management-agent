@@ -34,6 +34,35 @@ async def process_task(message: str, phone_number: str):
                 f"✅ The task {task.title} was successfully created",
                 phone_number
             )
+
+        elif action == "Get task":
+            date = date_extractor.extract_date(message)
+            tasks = await google_task.get_tasks_by_date(str(date))
+    
+            if not tasks:
+                await whatsapp_service.send_message(
+                    f"📭 No tasks found for {date}.",
+                    phone_number
+                )
+            else:
+                lines = [f"📋 *Tasks for {date}:*\n"]
+                for i, task in enumerate(tasks, start=1):
+                    lines.append(f"{i}. *{task['title']}*")
+                    if task.get("notes"):
+                        lines.append(f"   📝 {task['notes']}")
+        
+                formatted_message = "\n".join(lines)
+                await whatsapp_service.send_message(
+                    formatted_message,
+                    phone_number
+                )
+        
+        else:
+            await whatsapp_service.send_message(
+                "I didn't understand your request.",
+                phone_number
+            )
+
     
     except Exception as e:
         raise ValueError("There was an error: ", e)
