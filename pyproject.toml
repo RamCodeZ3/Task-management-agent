@@ -18,4 +18,5 @@ dependencies = [
     "redis>=7.4.0",
     "rq>=2.8.0",
     "dateparser>=1.4.0",
+    "python-multipart>=0.0.27",
 ]

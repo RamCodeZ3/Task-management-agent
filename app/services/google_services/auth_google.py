@@ -1,35 +1,46 @@
-from pathlib import Path
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
+from pathlib import Path
+import json
 
 
-SCOPES = ['https://www.googleapis.com/auth/tasks']
-
-BASE_DIR = Path(__file__).parent.parent.parent.parent
-TOKEN_PATH = BASE_DIR / 'token.json'
-CREDENTIALS_PATH = BASE_DIR / 'credentials.json'
+security = HTTPBearer()
+PATH_ORIGIN = Path(__file__).parent.parent.parent.parent
+CREDENTIALS_PATH = PATH_ORIGIN / "credentials.json"
 
 
-def get_credentials():
-    creds = None
+def get_google_creds(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> Credentials:
+    try:
+        with open(CREDENTIALS_PATH) as f:
+            data = json.load(f)
 
-    if TOKEN_PATH.exists():
-        creds = Credentials.from_authorized_user_file(
-            str(TOKEN_PATH),
-            SCOPES
+        client_info = data.get("web") or data.get("installed")
+
+        if not client_info:
+            raise ValueError(
+                f"Formato de credentials.json no reconocido. "
+                f"Claves encontradas: {list(data.keys())}"
+            )
+
+        return Credentials(
+            token=credentials.credentials,
+            client_id=client_info["client_id"],
+            client_secret=client_info["client_secret"],
+            token_uri=client_info.get("token_uri", "https://oauth2.googleapis.com/token"),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Token inválido: {str(e)}"
         )
 
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                str(CREDENTIALS_PATH),
-                SCOPES
-            )
-            creds = flow.run_local_server(port=0)
+def get_raw_token(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+) -> str:
+    return credentials.credentials
 
-        TOKEN_PATH.write_text(creds.to_json())
-
-    return creds

@@ -1,17 +1,16 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-
-from app.models import task
-from .auth_google import get_credentials
 from models.task import TaskModel
-from .google_task_list import google_task_list
+from .google_task_list import GoogleTaskList
+
 
 class GoogleTask:
-    def __init__(self):
+    def __init__(self, credentials):
+        self.credentials = credentials
         self.service = build(
             "tasks",
             "v1",
-            credentials=get_credentials()
+            credentials=self.credentials
         )
     
     async def create_task(self, task: TaskModel, task_list_id: str):
@@ -49,6 +48,7 @@ class GoogleTask:
 
     async def get_tasks_by_date(self, date: str):
         try:
+            google_task_list = GoogleTaskList(self.credentials)
             tasks_lists = await google_task_list.get_all_task_lists()
             tasks_by_date = []
 
@@ -111,4 +111,3 @@ class GoogleTask:
         except Exception as e:
             raise ValueError("There was an error deleting the task: ", e)
 
-google_task = GoogleTask()

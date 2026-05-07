@@ -1,0 +1,74 @@
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    UploadFile,
+    File,
+    Form
+)
+from typing import Optional
+from google.oauth2.credentials import Credentials
+from services.google_services.auth_google import get_google_creds, get_raw_token
+from services.google_services.google_task import GoogleTask
+from utils.utils import transcribe_audio_to_text
+from bus.bus import enqueue_message
+
+route = APIRouter(
+    prefix="/task",
+    tags=["Task"]
+)
+
+@route.post("/generate-task", status_code=status.HTTP_201_CREATED)
+async def generate_task(
+    message: Optional[str] = Form(default=None),
+    audio: Optional[UploadFile] = File(default=None),
+    creds: Credentials = Depends(get_google_creds),
+    raw_token: str = Depends(get_raw_token)
+):
+    if not creds:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="token required"
+        )
+
+    if audio:
+        audio_bytes = await audio.read()
+        message = await transcribe_audio_to_text(
+            audio_bytes,
+            str(audio.filename)
+        )
+    
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="message or audio required"
+        )
+
+    await enqueue_message(message, raw_token)
+
+
+@route.get("/", status_code=status.HTTP_200_OK)
+async def get_task(
+    task_list_id: str,
+    token: str = Depends(get_google_creds)
+):
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="token required"
+        )
+    if not task_list_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="task list id required"
+        )
+
+    google_task = GoogleTask(token)
+    task = await google_task.get_all_tasks(task_list_id)
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="tasks not found"
+        )
+    return {"items": task}
