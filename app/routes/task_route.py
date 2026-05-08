@@ -9,22 +9,24 @@ from fastapi import (
 )
 from typing import Optional
 from google.oauth2.credentials import Credentials
-from services.google_services.auth_google import get_google_creds, get_raw_token
+from services.google_services.auth_google import google_auth
 from services.google_services.google_task import GoogleTask
 from utils.utils import transcribe_audio_to_text
 from bus.bus import enqueue_message
+
 
 route = APIRouter(
     prefix="/task",
     tags=["Task"]
 )
 
+
 @route.post("/generate-task", status_code=status.HTTP_201_CREATED)
 async def generate_task(
     message: Optional[str] = Form(default=None),
     audio: Optional[UploadFile] = File(default=None),
-    creds: Credentials = Depends(get_google_creds),
-    raw_token: str = Depends(get_raw_token)
+    creds: Credentials = Depends(google_auth.get_google_creds),
+    raw_token: str = Depends(google_auth.get_raw_token)
 ):
     if not creds:
         raise HTTPException(
@@ -46,12 +48,13 @@ async def generate_task(
         )
 
     await enqueue_message(message, raw_token)
+    return {"status": "The task is in the queue."}
 
 
 @route.get("/", status_code=status.HTTP_200_OK)
 async def get_task(
     task_list_id: str,
-    token: str = Depends(get_google_creds)
+    token: str = Depends(google_auth.get_google_creds)
 ):
     if not token:
         raise HTTPException(

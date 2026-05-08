@@ -12,6 +12,7 @@ from services.llm_services.llm_service import llm_service
 def process_task(message: str, token: str):
     asyncio.run(_process_task_async(message, token))
 
+
 async def _process_task_async(message: str, token: str):
     try:
         creds = _build_credentials(token)
@@ -41,17 +42,17 @@ async def _process_task_async(message: str, token: str):
 PATH_ORIGIN = Path(__file__).parent.parent.parent
 CREDENTIALS_PATH = PATH_ORIGIN / "credentials.json"
 
-def _build_credentials(token: str) -> Credentials:
-    with open(CREDENTIALS_PATH) as f:
-        data = json.load(f)
-    client_info = data.get("web") or data.get("installed")
-    
-    creds = Credentials(
-        token=token,
-        refresh_token=None,       # si no tienes refresh_token está bien
-        client_id=client_info["client_id"],
-        client_secret=client_info["client_secret"],
-        token_uri=client_info.get("token_uri", "https://oauth2.googleapis.com/token"),
-    )
-    return creds
 
+def _build_credentials(token: str) -> Credentials:
+    token_data = json.loads(token)
+    
+    return Credentials(
+        token=token_data["token"],
+        refresh_token=token_data.get("refresh_token"),
+        token_uri=token_data.get(
+            "token_uri",
+            "https://oauth2.googleapis.com/token"
+        ),
+        client_id=token_data.get("client_id"),
+        client_secret=token_data.get("client_secret"),
+    )

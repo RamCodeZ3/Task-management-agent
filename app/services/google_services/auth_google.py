@@ -9,38 +9,35 @@ security = HTTPBearer()
 PATH_ORIGIN = Path(__file__).parent.parent.parent.parent
 CREDENTIALS_PATH = PATH_ORIGIN / "credentials.json"
 
+class GoogleAuth:
 
-def get_google_creds(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-) -> Credentials:
-    try:
-        with open(CREDENTIALS_PATH) as f:
-            data = json.load(f)
-
-        client_info = data.get("web") or data.get("installed")
-
-        if not client_info:
-            raise ValueError(
-                f"Formato de credentials.json no reconocido. "
-                f"Claves encontradas: {list(data.keys())}"
+    def get_google_creds(
+        self,
+        credentials: HTTPAuthorizationCredentials = Depends(security)
+    ) -> Credentials:
+        try:
+            token_data = json.loads(credentials.credentials)
+        
+            return Credentials(
+                token=token_data["token"],
+                refresh_token=token_data["refresh_token"],
+                token_uri=token_data["token_uri"],
+                client_id=token_data["client_id"],
+                client_secret=token_data["client_secret"],
+            )
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Token inválido: {str(e)}"
             )
 
-        return Credentials(
-            token=credentials.credentials,
-            client_id=client_info["client_id"],
-            client_secret=client_info["client_secret"],
-            token_uri=client_info.get("token_uri", "https://oauth2.googleapis.com/token"),
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Token inválido: {str(e)}"
-        )
 
-def get_raw_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-) -> str:
-    return credentials.credentials
+    def get_raw_token(
+        self,
+        credentials: HTTPAuthorizationCredentials = Depends(security)
+    ) -> str:
+        return credentials.credentials
+
+
+google_auth = GoogleAuth()
 
