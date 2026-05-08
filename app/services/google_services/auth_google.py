@@ -1,35 +1,43 @@
-from pathlib import Path
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
+from pathlib import Path
+import json
 
 
-SCOPES = ['https://www.googleapis.com/auth/tasks']
+security = HTTPBearer()
+PATH_ORIGIN = Path(__file__).parent.parent.parent.parent
+CREDENTIALS_PATH = PATH_ORIGIN / "credentials.json"
 
-BASE_DIR = Path(__file__).parent.parent.parent.parent
-TOKEN_PATH = BASE_DIR / 'token.json'
-CREDENTIALS_PATH = BASE_DIR / 'credentials.json'
+class GoogleAuth:
 
-
-def get_credentials():
-    creds = None
-
-    if TOKEN_PATH.exists():
-        creds = Credentials.from_authorized_user_file(
-            str(TOKEN_PATH),
-            SCOPES
-        )
-
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                str(CREDENTIALS_PATH),
-                SCOPES
+    def get_google_creds(
+        self,
+        credentials: HTTPAuthorizationCredentials = Depends(security)
+    ) -> Credentials:
+        try:
+            token_data = json.loads(credentials.credentials)
+        
+            return Credentials(
+                token=token_data["token"],
+                refresh_token=token_data["refresh_token"],
+                token_uri=token_data["token_uri"],
+                client_id=token_data["client_id"],
+                client_secret=token_data["client_secret"],
             )
-            creds = flow.run_local_server(port=0)
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Token inválido: {str(e)}"
+            )
 
-        TOKEN_PATH.write_text(creds.to_json())
 
-    return creds
+    def get_raw_token(
+        self,
+        credentials: HTTPAuthorizationCredentials = Depends(security)
+    ) -> str:
+        return credentials.credentials
+
+
+google_auth = GoogleAuth()
+

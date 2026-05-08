@@ -1,14 +1,13 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from .auth_google import get_credentials
 
 
 class GoogleTaskList:
-    def __init__(self):
+    def __init__(self, credentials):
         self.service = build(
             "tasks",
             "v1",
-            credentials=get_credentials()
+            credentials=credentials
         )
     
     async def create_task_list(self, title: str):
@@ -50,5 +49,3 @@ class GoogleTaskList:
         except Exception as e:
             raise ValueError(f"There was an error getting the task list: {e}")
 
-
-google_task_list = GoogleTaskList()

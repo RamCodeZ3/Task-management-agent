@@ -1,10 +1,12 @@
 import uvicorn
 from fastapi import FastAPI
-from webhook.router import router
+from routes.task_route import route as task_route
+from routes.auth_route import route as auth_route
 
 
 app = FastAPI()
-app.include_router(router)
+app.include_router(task_route)
+app.include_router(auth_route)
 
 
 if __name__ == "__main__":
