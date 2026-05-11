@@ -2,7 +2,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from models.task import TaskModel
 from .google_task_list import GoogleTaskList
-
+from datetime import datetime
 
 class GoogleTask:
     def __init__(self, credentials):
@@ -46,6 +46,7 @@ class GoogleTask:
         except Exception as e:
             raise ValueError("There was an error getting the tasks: ", e)
 
+
     async def get_tasks_by_date(self, date: str):
         try:
             google_task_list = GoogleTaskList(self.credentials)
@@ -56,21 +57,50 @@ class GoogleTask:
                 tasks = await self.get_all_tasks(task_list["id"])
 
                 for t in tasks:
-                    if t["due"] == date:
+                    task_due = t.get("due")
+                    if not task_due:
+                        continue
+                
+                    task_date = datetime.fromisoformat(
+                        task_due.replace("Z", "+00:00")
+                    ).strftime("%Y-%m-%d")
+
+                    if task_date == date:
                         tasks_by_date.append({
-                            "title": t["title"],
-                            "notes": t["notes"]
+                            "title": t.get("title"),
+                            "notes": t.get("notes")
                         })
+
             return tasks_by_date
-            
+        
         except HttpError as e:
             raise ValueError("There was an http error: ", e)
-        
+    
         except Exception as e:
             raise ValueError("There was an error getting the tasks: ", e)
 
-
+    async def get_pending_tasks(self):
+        try:
+            google_task_list = GoogleTaskList(self.credentials)
+            tasks_lists = await google_task_list.get_all_task_lists()
+            pending_tasks = []
+            for task_list in tasks_lists:
+                tasks = self.service.tasks().list(
+                        tasklist=task_list["id"],
+                        showCompleted=False
+                    ).execute()
+            
+                for t in tasks.get("items", []):
+                    pending_tasks.append(t)
         
+            return pending_tasks
+
+        except HttpError as e:
+            raise ValueError("There was an http error: ", e)
+
+        except Exception as e:
+            raise ValueError("There was an error getting the tasks: ", e)
+
     async def update_task(
             self,
             task: TaskModel,

@@ -75,3 +75,47 @@ async def get_task(
             detail="tasks not found"
         )
     return {"items": task}
+
+
+@route.get("/pending_task", status_code=status.HTTP_200_OK)
+async def get_pending_tasks(
+    token: str = Depends(google_auth.get_google_creds)
+):
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="token required"
+        )
+
+    google_task = GoogleTask(token)
+    pending_tasks = await google_task.get_pending_tasks()
+
+    if not pending_tasks:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="items not found"
+        )
+
+    return {"items": pending_tasks}
+
+@route.get("/{date}", status_code=status.HTTP_200_OK)
+async def get_task_by_date(
+    date: str,
+    token: str = Depends(google_auth.get_google_creds),
+):
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="token required"
+        )
+
+    google_task = GoogleTask(token)
+    tasks = await google_task.get_tasks_by_date(date)
+
+    if not tasks:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="items not found"
+        )
+    return {"items": tasks}
+
