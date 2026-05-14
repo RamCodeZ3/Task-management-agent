@@ -1,6 +1,6 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from models.task import TaskModel
+from schemas.task import TaskModel
 from .google_task_list import GoogleTaskList
 from datetime import datetime
 
