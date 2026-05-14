@@ -1,11 +1,14 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from app.utils.db import engine, Base
-from app.routes.task_route import route as task_route
-from app.routes.auth_route import route as auth_route
+from utils.db import engine, Base
+from routes.task_route import route as task_route
+from routes.auth_route import route as auth_route
 import uvicorn
-import app.models
+import models
+from dotenv import load_dotenv
 
+
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
