@@ -1,14 +1,29 @@
 from google_auth_oauthlib.flow import Flow
-from fastapi import APIRouter
+from googleapiclient.discovery import build
+from fastapi import APIRouter, Depends
 from fastapi.responses import RedirectResponse, JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 from pathlib import Path
+from services.database_service.user import UserServiceDB
+from services.database_service.token import TokenServiceDB, TokenSecretServiceDB
+from schemas.user import CreateUser
+from schemas.token import CreateToken, CreateTokenSecret
+from datetime import timezone
+from utils.db import get_db
+from utils.jwt import create_jwt
 
 
 route = APIRouter(prefix="/auth", tags=["Auth"])
-SCOPES = ["https://www.googleapis.com/auth/tasks"]
+
+SCOPES = [
+    "https://www.googleapis.com/auth/tasks",
+    "openid",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+]
+
 PATH_ORIGIN = Path(__file__).parent.parent.parent
 CREDENTIALS_PATH = PATH_ORIGIN / "credentials.json"
-
 _flow_store = {}
 
 
@@ -28,7 +43,11 @@ def login():
 
 
 @route.get("/callback")
-def callback(code: str, state: str):
+async def callback(
+    code: str,
+    state: str,
+    db: AsyncSession = Depends(get_db)
+):
     flow = _flow_store.pop(state, None)
     if not flow:
         return JSONResponse(
@@ -39,10 +58,39 @@ def callback(code: str, state: str):
     flow.fetch_token(code=code)
     creds = flow.credentials
 
+    service = build("oauth2", "v2", credentials=creds)
+    user_info = service.userinfo().get().execute()
+
+    user_db = UserServiceDB(db)
+    token_db = TokenServiceDB(db)
+    token_secret_db = TokenSecretServiceDB(db)
+
+    user = CreateUser(
+        display_name=user_info["name"],
+        email=user_info["email"]
+    )
+    user_result = await user_db.create_user(user)
+
+    token = CreateToken(
+        user_id=user_result.id,
+        token_access=creds.token,
+        token_uri=creds.token_uri,
+        client_id=creds.client_id,
+        scopes=" ".join(creds.scopes),
+        expiry=creds.expiry.replace(tzinfo=timezone.utc).isoformat()
+    )
+    token_secret = CreateTokenSecret(
+        user_id=user_result.id,
+        refresh_token=creds.refresh_token
+    )
+
+    await token_db.create_token(token)
+    await token_secret_db.create_token_secret(token_secret)
+
+    jwt_token = create_jwt(str(user_result.id))
+
     return {
-        "token": creds.token,
-        "refresh_token": creds.refresh_token,
-        "token_uri": creds.token_uri,
-        "client_id": creds.client_id,
-        "client_secret": creds.client_secret,
+        "email": user_result.email,
+        "access_token": jwt_token,
+        "token_type": "Bearer"
     }
