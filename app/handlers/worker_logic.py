@@ -2,7 +2,7 @@ import asyncio
 import json
 from pathlib import Path
 from google.oauth2.credentials import Credentials
-from models.task import TaskModel
+from schemas.task import TaskModel
 from services.extract_date.extract_date import date_extractor
 from services.google_services.google_task import GoogleTask
 from services.google_services.google_task_list import GoogleTaskList
