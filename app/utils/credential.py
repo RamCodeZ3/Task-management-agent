@@ -3,7 +3,6 @@ from google.oauth2.credentials import Credentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.database_service.token import TokenServiceDB
 from services.database_service.token import TokenSecretServiceDB
-from .encryption import decrypt
 import json
 
 
@@ -32,7 +31,7 @@ async def build_credentials_from_db(user_id: str, db: AsyncSession) -> Credentia
 
     return Credentials(
         token=token.token_access,
-        refresh_token=decrypt(token_secret.refresh_token),
+        refresh_token=token_secret,
         token_uri=token.token_uri,
         client_id=token.client_id,
         client_secret=client_secret,

@@ -9,7 +9,6 @@ from schemas.token import (
 )
 from models.user_token import Token
 from models.token_secret import TokenSecret
-from models.user import User
 from utils.encryption import encrypt, decrypt
 
 
@@ -45,7 +44,10 @@ class TokenSecretServiceDB:
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
 
-    async def create_token_secret(self, data: CreateTokenSecret) -> TokenSecretModel:
+    async def create_token_secret(
+        self,
+        data: CreateTokenSecret
+        ) -> TokenSecretModel:
         try:
             token_secret = TokenSecret(
                 user_id=data.user_id,
@@ -68,5 +70,6 @@ class TokenSecretServiceDB:
             )
             secret = result.scalar_one_or_none()
             return decrypt(secret.refresh_token) if secret else None
+        
         except Exception as e:
             raise ValueError(f"There was an unexpected error: {e}")
