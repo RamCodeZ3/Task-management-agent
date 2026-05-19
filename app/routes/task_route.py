@@ -8,11 +8,12 @@ from fastapi import (
     Form
 )
 from typing import Optional
-from google.oauth2.credentials import Credentials
-from services.google_services.auth_google import google_auth
 from services.google_services.google_task import GoogleTask
-from utils.utils import transcribe_audio_to_text
+from utils.transcriber import transcribe_audio_to_text
 from bus.bus import enqueue_message
+from .dependencies.auth import get_current_user
+from utils.credential import build_credentials_from_db
+from utils.db import AsyncSessionLocal
 
 
 route = APIRouter(
@@ -25,13 +26,12 @@ route = APIRouter(
 async def generate_task(
     message: Optional[str] = Form(default=None),
     audio: Optional[UploadFile] = File(default=None),
-    creds: Credentials = Depends(google_auth.get_google_creds),
-    raw_token: str = Depends(google_auth.get_raw_token)
+    current_user: str = Depends(get_current_user)
 ):
-    if not creds:
+    if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="token required"
+            detail="User token required"
         )
 
     if audio:
@@ -47,27 +47,30 @@ async def generate_task(
             detail="message or audio required"
         )
 
-    await enqueue_message(message, raw_token)
+    await enqueue_message(message, current_user)
     return {"status": "The task is in the queue."}
 
 
 @route.get("/", status_code=status.HTTP_200_OK)
 async def get_task(
     task_list_id: str,
-    token: str = Depends(google_auth.get_google_creds)
+    current_user: str = Depends(get_current_user)
 ):
-    if not token:
+    if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="token required"
+            detail="User token required"
         )
     if not task_list_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="task list id required"
         )
+    
+    async with AsyncSessionLocal() as db:
+        creds = await build_credentials_from_db(current_user, db)
 
-    google_task = GoogleTask(token)
+    google_task = GoogleTask(creds)
     task = await google_task.get_all_tasks(task_list_id)
     if not task:
         raise HTTPException(
@@ -79,15 +82,17 @@ async def get_task(
 
 @route.get("/pending_task", status_code=status.HTTP_200_OK)
 async def get_pending_tasks(
-    token: str = Depends(google_auth.get_google_creds)
+    current_user: str = Depends(get_current_user)
 ):
-    if not token:
+    if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="token required"
+            detail="User token required"
         )
-
-    google_task = GoogleTask(token)
+    async with AsyncSessionLocal() as db:
+        creds = await build_credentials_from_db(current_user, db)
+    
+    google_task = GoogleTask(creds)
     pending_tasks = await google_task.get_pending_tasks()
 
     if not pending_tasks:
@@ -98,18 +103,21 @@ async def get_pending_tasks(
 
     return {"items": pending_tasks}
 
+
 @route.get("/{date}", status_code=status.HTTP_200_OK)
 async def get_task_by_date(
     date: str,
-    token: str = Depends(google_auth.get_google_creds),
+    current_user: str = Depends(get_current_user),
 ):
-    if not token:
+    if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="token required"
+            detail="User token required"
         )
+    async with AsyncSessionLocal() as db:
+        creds = await build_credentials_from_db(current_user, db)
 
-    google_task = GoogleTask(token)
+    google_task = GoogleTask(creds)
     tasks = await google_task.get_tasks_by_date(date)
 
     if not tasks:

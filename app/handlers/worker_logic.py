@@ -1,21 +1,22 @@
 import asyncio
-import json
-from pathlib import Path
-from google.oauth2.credentials import Credentials
 from schemas.task import TaskModel
 from services.extract_date.extract_date import date_extractor
 from services.google_services.google_task import GoogleTask
 from services.google_services.google_task_list import GoogleTaskList
 from services.llm_services.llm_service import llm_service
+from utils.credential import build_credentials_from_db
+from utils.db import AsyncSessionLocal
 
 
-def process_task(message: str, token: str):
-    asyncio.run(_process_task_async(message, token))
+def process_task(message: str, used_id: str):
+    asyncio.run(_process_task_async(message, used_id))
 
 
-async def _process_task_async(message: str, token: str):
+async def _process_task_async(message: str, used_id: str):
     try:
-        creds = _build_credentials(token)
+        async with AsyncSessionLocal() as db:
+            creds = await build_credentials_from_db(used_id, db)
+    
         google_task = GoogleTask(creds)
         google_task_list = GoogleTaskList(creds)
 
@@ -38,21 +39,3 @@ async def _process_task_async(message: str, token: str):
     except Exception as e:
         raise ValueError("There was an error: ", e)
 
-
-PATH_ORIGIN = Path(__file__).parent.parent.parent
-CREDENTIALS_PATH = PATH_ORIGIN / "credentials.json"
-
-
-def _build_credentials(token: str) -> Credentials:
-    token_data = json.loads(token)
-    
-    return Credentials(
-        token=token_data["token"],
-        refresh_token=token_data.get("refresh_token"),
-        token_uri=token_data.get(
-            "token_uri",
-            "https://oauth2.googleapis.com/token"
-        ),
-        client_id=token_data.get("client_id"),
-        client_secret=token_data.get("client_secret"),
-    )
