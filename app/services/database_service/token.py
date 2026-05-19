@@ -1,15 +1,16 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from models.token_secret import TokenSecret
+from models.user_token import Token
 from schemas.token import (
     CreateToken,
-    TokenModel,
     CreateTokenSecret,
-    TokenSecretModel
+    TokenModel,
+    TokenSecretModel,
 )
-from models.user_token import Token
-from models.token_secret import TokenSecret
-from utils.encryption import encrypt, decrypt
+from utils.encryption import decrypt, encrypt
 
 
 class TokenServiceDB:
@@ -45,13 +46,11 @@ class TokenSecretServiceDB:
         self.db = db
 
     async def create_token_secret(
-        self,
-        data: CreateTokenSecret
-        ) -> TokenSecretModel:
+        self, data: CreateTokenSecret
+    ) -> TokenSecretModel:
         try:
             token_secret = TokenSecret(
-                user_id=data.user_id,
-                refresh_token=encrypt(data.refresh_token)
+                user_id=data.user_id, refresh_token=encrypt(data.refresh_token)
             )
             self.db.add(token_secret)
             await self.db.commit()
@@ -70,6 +69,6 @@ class TokenSecretServiceDB:
             )
             secret = result.scalar_one_or_none()
             return decrypt(secret.refresh_token) if secret else None
-        
+
         except Exception as e:
             raise ValueError(f"There was an unexpected error: {e}")

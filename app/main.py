@@ -1,20 +1,22 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
-from utils.db import engine, Base
-from routes.task_route import route as task_route
-from routes.auth_route import route as auth_route
-import uvicorn
-import models
-from dotenv import load_dotenv
 
+import uvicorn
+from dotenv import load_dotenv
+from fastapi import FastAPI
+
+from routes.auth_route import route as auth_route
+from routes.task_route import route as task_route
+from utils.db import Base, engine
 
 load_dotenv()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
+
 
 app = FastAPI(lifespan=lifespan)
 
