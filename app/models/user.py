@@ -1,8 +1,10 @@
-from sqlalchemy import Column, String, DateTime
+import uuid
+
+from sqlalchemy import Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+
 from utils.db import Base
-import uuid
 
 
 class User(Base):
@@ -12,4 +14,3 @@ class User(Base):
     display_name = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True, index=True)
     created_at = Column(DateTime, server_default=func.now())
-

@@ -1,10 +1,11 @@
 from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
+
 from utils.jwt import decode_jwt
 
-
 security = HTTPBearer()
+
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
@@ -16,11 +17,8 @@ async def get_current_user(
         user_id = payload.get("sub")
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token")
-    
+
     except JWTError:
-        raise HTTPException(
-            status_code=401,
-            detail="Expired or invalid token"
-        )
+        raise HTTPException(status_code=401, detail="Expired or invalid token")
 
     return user_id

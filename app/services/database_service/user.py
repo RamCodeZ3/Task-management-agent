@@ -1,8 +1,9 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from schemas.user import CreateUser, UserModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from models.user import User
+from schemas.user import CreateUser, UserModel
 
 
 class UserServiceDB:
@@ -33,5 +34,3 @@ class UserServiceDB:
 
         except Exception as e:
             raise ValueError(f"There was an unexpected error: {e}")
-
-

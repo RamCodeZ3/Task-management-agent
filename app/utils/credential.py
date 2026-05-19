@@ -1,16 +1,21 @@
-from pathlib import Path
-from google.oauth2.credentials import Credentials
-from sqlalchemy.ext.asyncio import AsyncSession
-from services.database_service.token import TokenServiceDB
-from services.database_service.token import TokenSecretServiceDB
 import json
+from pathlib import Path
 
+from google.oauth2.credentials import Credentials
+from services.database_service.token import (
+    TokenSecretServiceDB,
+    TokenServiceDB,
+)
+from sqlalchemy.ext.asyncio import AsyncSession
 
 PATH_ORIGIN = Path(__file__).parent.parent.parent
 CREDENTIALS_PATH = PATH_ORIGIN / "credentials.json"
 
-async def build_credentials_from_db(user_id: str, db: AsyncSession) -> Credentials:
-    
+
+async def build_credentials_from_db(
+    user_id: str, db: AsyncSession
+) -> Credentials:
+
     token_db = TokenServiceDB(db)
     token_secret_db = TokenSecretServiceDB(db)
 
@@ -22,12 +27,13 @@ async def build_credentials_from_db(user_id: str, db: AsyncSession) -> Credentia
     if not token_secret:
         raise ValueError(f"No user secret token found {user_id}")
 
-    with open(CREDENTIALS_PATH, "r") as f:
+    with open(CREDENTIALS_PATH) as f:
         credentials_data = json.load(f)
-    
-    client_config = credentials_data.get("web") or credentials_data.get("installed")
+
+    client_config = credentials_data.get("web") or credentials_data.get(
+        "installed"
+    )
     client_secret = client_config.get("client_secret")
-    
 
     return Credentials(
         token=token.token_access,

@@ -1,17 +1,21 @@
+from datetime import UTC
+from pathlib import Path
+
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse, RedirectResponse
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
-from fastapi import APIRouter, Depends
-from fastapi.responses import RedirectResponse, JSONResponse
-from sqlalchemy.ext.asyncio import AsyncSession
-from pathlib import Path
+from services.database_service.token import (
+    TokenSecretServiceDB,
+    TokenServiceDB,
+)
 from services.database_service.user import UserServiceDB
-from services.database_service.token import TokenServiceDB, TokenSecretServiceDB
-from schemas.user import CreateUser
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from schemas.token import CreateToken, CreateTokenSecret
-from datetime import timezone
+from schemas.user import CreateUser
 from utils.db import get_db
 from utils.jwt import create_jwt
-
 
 route = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -32,7 +36,7 @@ def login():
     flow = Flow.from_client_secrets_file(
         str(CREDENTIALS_PATH),
         scopes=SCOPES,
-        redirect_uri="http://localhost:8000/auth/callback"
+        redirect_uri="http://localhost:8000/auth/callback",
     )
     auth_url, state = flow.authorization_url(
         access_type="offline",
@@ -43,16 +47,11 @@ def login():
 
 
 @route.get("/callback")
-async def callback(
-    code: str,
-    state: str,
-    db: AsyncSession = Depends(get_db)
-):
+async def callback(code: str, state: str, db: AsyncSession = Depends(get_db)):
     flow = _flow_store.pop(state, None)
     if not flow:
         return JSONResponse(
-            {"error": "state inválido o expirado"},
-            status_code=400
+            {"error": "state inválido o expirado"}, status_code=400
         )
 
     flow.fetch_token(code=code)
@@ -65,10 +64,7 @@ async def callback(
     token_db = TokenServiceDB(db)
     token_secret_db = TokenSecretServiceDB(db)
 
-    user = CreateUser(
-        display_name=user_info["name"],
-        email=user_info["email"]
-    )
+    user = CreateUser(display_name=user_info["name"], email=user_info["email"])
     user_result = await user_db.create_user(user)
 
     token = CreateToken(
@@ -77,11 +73,10 @@ async def callback(
         token_uri=creds.token_uri,
         client_id=creds.client_id,
         scopes=" ".join(creds.scopes),
-        expiry=creds.expiry.replace(tzinfo=timezone.utc).isoformat()
+        expiry=creds.expiry.replace(tzinfo=UTC).isoformat(),
     )
     token_secret = CreateTokenSecret(
-        user_id=user_result.id,
-        refresh_token=creds.refresh_token
+        user_id=user_result.id, refresh_token=creds.refresh_token
     )
 
     await token_db.create_token(token)
@@ -92,5 +87,5 @@ async def callback(
     return {
         "email": user_result.email,
         "access_token": jwt_token,
-        "token_type": "Bearer"
+        "token_type": "Bearer",
     }
