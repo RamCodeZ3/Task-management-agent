@@ -18,10 +18,10 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, title="Task Management")
 
-app.include_router(task_route)
-app.include_router(auth_route)
+app.include_router(task_route, prefix="/api/v1")
+app.include_router(auth_route, prefix="/api/v1")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

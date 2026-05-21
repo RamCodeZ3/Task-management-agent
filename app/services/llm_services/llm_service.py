@@ -22,4 +22,5 @@ class LLMService:
             "classification": classify(text, LABELS_CLASSIFY),
         }
 
+
 llm_service = LLMService()

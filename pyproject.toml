@@ -1,7 +1,7 @@
 [project]
 name = "task-management-agent"
-version = "0.1.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "API that helps you create tasks for Google Tasks"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
