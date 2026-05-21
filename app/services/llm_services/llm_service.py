@@ -4,16 +4,14 @@ from services.llm_services.generation_llm import (
     generate_title,
 )
 
-INTENT_LABELS_DESCRIPTIVE = [
-    "create a new task",
-    "update an existing task",
-    "delete a task",
-    "get or list tasks",
+
+LABELS_CLASSIFY = [
+    "personal tasks",
+    "shopping",
+    "work tasks",
+    "important",
+    "household chores",
 ]
-
-INTENT_LABELS = ["Create task", "Update task", "Delete task", "Get Task"]
-
-LABELS_CLASSIFY = ["tech", "business", "science"]
 
 
 class LLMService:
@@ -23,12 +21,5 @@ class LLMService:
             "description": generate_description(text),
             "classification": classify(text, LABELS_CLASSIFY),
         }
-
-    def classify_intent(self, text: str):
-        classification = classify(text, INTENT_LABELS_DESCRIPTIVE)
-        return INTENT_LABELS[
-            INTENT_LABELS_DESCRIPTIVE.index(classification["top_label"])
-        ]
-
 
 llm_service = LLMService()
